@@ -71,6 +71,24 @@ async function play() {
     }
 }
 
+async function interruptAtSpecificTime(time,fileName){
+    const now = Date.now()
+    const day = new Date('June 30, 2020 16:25:45:250')
+    const waitTime = day-now
+    setTimeout(function() {interrupt(fileName)}, waitTime)
+    console.log(day-now)
+    console.log(waitTime)
+    // console.log(day.getTime())
+    // console.log(day.getDate());
+    // console.log(day.getDay())
+    // console.log(day.getHours())
+    // console.log(day.getMinutes())
+    // console.log(day.getSeconds())
+    // console.log(day.getMilliseconds())
+    // console.log(day.getMonth())
+    // console.log(day.getFullYear())
+}
+
 async function interrupt(fileName) {
     const radios = await Radio.findById('1')
     const playlist = radios.playlist
@@ -195,7 +213,7 @@ client.on('message', async (topic, message) => {
         play()
     }
     else if(x==='interrupt'){
-        interrupt('acoustic.mp3')
+        interruptAtSpecificTime(12.15,'summer.mp3')
     }
     else if(x==='getOutput'){
         const cmd = await getOutputFromCommandLine('mpc status')
