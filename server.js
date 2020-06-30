@@ -7,7 +7,18 @@ const File = require('./models/file');
 const Command = require('./models/command');
 const { exec } = require('child_process');
 
+setInterval(sendActiveLastTime, 3000)
+
 var fileNumber = 0
+
+async function sendActiveLastTime(){
+    status = await getOutputFromCommandLine('mpc status')
+    console.log(status)
+    //client.publish('tk/demo2', `${Date.now()} from player ${1} \n${status}`)
+    const payload = {'activeLastTime':Date.now()}
+    const radios = await Radio.findByIdAndUpdate('1',{$set: payload})
+}
+
 
 async function clearSetTimeOut(){
     if(setTimeOut.length>0){
@@ -73,10 +84,12 @@ async function play() {
 
 async function interruptAtSpecificTime(time,fileName){
     const now = Date.now()
-    const day = new Date('June 30, 2020 16:25:45:250')
+    const day = new Date('June 30, 2020 10:02:00:000')
     const waitTime = day-now
-    setTimeout(function() {interrupt(fileName)}, waitTime)
-    console.log(day-now)
+    //setTimeout(function() {interrupt(fileName)}, waitTime)
+    setTimeout(function() {exec('mpc play 3')}, waitTime)
+
+    //console.log(day-now)
     console.log(waitTime)
     // console.log(day.getTime())
     // console.log(day.getDate());
