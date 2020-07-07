@@ -3,9 +3,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const Radio = require('./models/radio');
-const File = require('./models/file');
-const Command = require('./models/command');
-const Files = require('./models/files')
+const Files = require('./models/files');
 const { exec } = require('child_process');
 var fs = require('fs')
 let playlist = []
@@ -58,26 +56,9 @@ function calculateWaitTime(time) {
     return timeToWait
 }
 
-// function callCommand(pid, vol, time){
-//     setTimeOut.push(setTimeout(function() {client.publish('tk/demo', `mpc volume ${vol}`); client.publish('tk/demo', `mpc play ${pid}`); fileNumber=fileNumber+1}, time));
-// }
-
 function callNextFile(vol, waitTime) {
     setTimeOut.push(setTimeout(function () { exec(`mpc volume ${vol}`); exec(`mpc next`); }, waitTime));
 }
-
-// async function getVolume(fileName) {
-//     const radios = await Radio.findById(fid)
-//     const file = await File.findById(fileName)
-//     const fileType = file.fileType
-//     let vol = radios.mainVolume
-//     if (fileType === 'jingle') { vol = vol + radios.jingleVolume }
-//     else if (fileType === 'music') { vol = vol + radios.musicVolume }
-//     else if (fileType === 'spot') { vol = vol + radios.spotVolume }
-//     else if (fileType === 'storeIdentity') { vol = vol + radios.storeIdentityVolume }
-//     //console.log(`vol = ${vol}`)
-//     return (vol)
-// }
 
 async function getVolume(fileName) {
     const radios = await Radio.findById(fid)
@@ -173,74 +154,12 @@ async function interrupt(fileName) {
         console.log(playlist[i])
         console.log(waitTime)
     }
-
-
-
-
-
 }
-
-// async function play(playlist){
-//     exec('mpc clear')
-//     exec('mpc update')
-//     exec(`mpc load ${playlist}`)
-//     exec('mpc play')
-// }
-
-//async function play() {
-// const radios = await Radio.findById(fid)
-// const playlist = radios.playlist
-// let waitTime = 0
-// var i
-// for(i=0;i<playlist.length;i++){
-//     const nextFile = playlist[i]
-//     console.log(nextFile)
-//     const file = await File.findById(nextFile)
-//     const pid = file.pid
-//     const vol = await getVolume(nextFile)
-//     console.log(`volume ${vol}`)
-//     console.log(`waitTime = ${waitTime}`)
-//     const timeOut = callCommand(pid, vol, waitTime)
-//     const length = file.fileLength
-//     waitTime = waitTime + calculateWaitTime(length)
-// }
-// const date =new Date()
-// const day = date.getDay()
-// let openTime
-// let closeTime
-// if(day === 0){openTime = await Radio.findById(fid).SunOpenTime; closeTime = await Radio.findById(fid).SunCloseTime}
-// else if(day === 1){openTime = await Radio.findById(fid).MonOpenTime; closeTime = await Radio.findById(fid).MonCloseTime}
-// else if(day === 2){openTime = await Radio.findById(fid).TueOpenTime; closeTime = await Radio.findById(fid).TueCloseTime}
-// else if(day === 3){openTime = await Radio.findById(fid).WedOpenTime; closeTime = await Radio.findById(fid).WedCloseTime}
-// else if(day === 4){openTime = await Radio.findById(fid).ThuOpenTime; closeTime = await Radio.findById(fid).ThuCloseTime}
-// else if(day === 5){openTime = await Radio.findById(fid).FriOpenTime; closeTime = await Radio.findById(fid).FriCloseTime}
-// else if(day === 6){openTime = await Radio.findById(fid).SatOpenTime; closeTime = await Radio.findById(fid).SatCloseTime}
-// const open = convertTimeToMilliSeconds(openTime)
-// const close = convertTimeToMilliSeconds(closeTime)
-// const length = close - open
-// console.log(length)
-// if(length > waitTime){
-//     const defaultPlaylist = radios.defaultPlaylist
-//     for(let i=0;i<defaultPlaylist.length;i++){
-//         const nextFile = defaultPlaylist[i]
-//         console.log(nextFile)
-//         const file = await File.findById(nextFile)
-//         const pid = file.pid
-//         const vol = await getVolume(nextFile)
-//         console.log(`volume ${vol}`)
-//         console.log(`waitTime = ${waitTime}`)
-//         const timeOut = callCommand(pid, vol, waitTime)
-//         const length = file.fileLength
-//         waitTime = waitTime + calculateWaitTime(length)
-//     }
-// }
-//}
 
 async function interruptAtSpecificTime(time, fileName) {
     const now = Date.now()
     const day = new Date('June 30, 2020 10:02:00:000')
     const waitTime = day - now
-    //setTimeout(function() {interrupt(fileName)}, waitTime)
     setTimeout(function () { exec('mpc play 3') }, waitTime)
 
     //console.log(day-now)
@@ -255,88 +174,6 @@ async function interruptAtSpecificTime(time, fileName) {
     // console.log(day.getMonth())
     // console.log(day.getFullYear())
 }
-
-// async function interrupt(fileName) {
-//     const radios = await Radio.findById(fid)
-//     const playlist = radios.playlist
-//     stringStatus = await getOutputFromCommandLine('mpc status')
-//     const status = stringStatus.split('   ').join(',').split('  ').join(',').split(' ').join(',').split('\n').join(',').split(',')
-
-//     //nowPlaying
-//     const nowPlaying = status[0]
-//     const minutePlayed = status[3].split('/')[0].split(':')[0]
-//     const secondPlayed = status[3].split('/')[0].split(':')[1]
-//     const minuteLength = parseInt(status[3].split('/')[1].split(':')[0])
-//     const secondLength = parseInt(status[3].split('/')[1].split(':')[1])
-//     const nowPlayingVol = status[6].slice(0,-1)
-//     const nowPlayingFile = await File.findById(nowPlaying)
-//     const nowPlayingPid = nowPlayingFile.pid
-
-//     //interruptFile
-//     const interruptFile = await File.findById(fileName)
-//     const interruptPid = interruptFile.pid
-//     const interruptLength = interruptFile.fileLength
-//     const interruptVol = await getVolume(fileName)
-
-//     //play interruptFile
-//     exec(`mpc volume ${interruptVol}`)
-//     exec(`mpc play ${interruptPid}`)
-
-//     //clear setTimeOut
-//     clearSetTimeOut()
-
-//     //play after interrupt
-//     setTimeOut.push(setTimeout(function() {client.publish('tk/demo', `mpc volume 0`); 
-//                                         client.publish('tk/demo', `mpc play ${nowPlayingPid}`); 
-//                                         client.publish('tk/demo', `mpc seek ${minutePlayed}:${secondPlayed}`);
-//                                         client.publish('tk/demo', `mpc volume ${nowPlayingVol}`)}, calculateWaitTime(interruptLength)));
-
-//     //add remaining file to playlist
-//     let waitTime = calculateWaitTime(minuteLength+(secondLength/100)+interruptLength)
-//     for(let i=fileNumber;i<playlist.length;i++){
-//         const nextFile = playlist[i]
-//         console.log(nextFile)
-//         const file = await File.findById(nextFile)
-//         const pid = file.pid
-//         const vol = await getVolume(nextFile)
-//         console.log(`volume ${vol}`)
-//         console.log(`waitTime = ${waitTime}`)
-//         const timeOut = callCommand(pid, vol, waitTime)
-//         const length = file.fileLength
-//         waitTime = waitTime + calculateWaitTime(length)
-//     }
-
-
-// }
-
-// async function interrupt(fileName){
-//     const status = await getOutputFromCommandLine('mpc status')
-//     const milli = await getOutputFromCommandLine(`mediainfo --Inform="Audio;%Duration%" /var/lib/mpd/music/"${fileName}"`)
-//     const waitTime = parseInt(milli)
-//     console.log(waitTime)
-//     const number = status.split('\n')[1].split('#')[1].split('/')[0]
-//     const time = status.split('\n')[1].split('   ')[1].split('/')[0].split(':')
-//     console.log(`number ${number}`)
-//     console.log(time)
-//     //const file = await Files.findById(fileName)
-//     //const length = file.length
-//     exec('mpc pause')
-//     exec('mpc clear')
-//     exec(`mpc add "${fileName}"`)
-//     exec('mpc play')
-//     //exec('mpc single on')
-//     //exec(`mpc play`)
-//     //const status2 = await getOutputFromCommandLine('mpc status')
-//     //console.log(status2)
-//     setTimeout(function() {exec('mpc pause');
-//                         exec('mpc clear'); 
-//                         exec('mpc load playlist4');
-//                         exec('mpc volume 0');
-//                         exec(`mpc play ${number}`);
-//                         exec(`mpc seek ${time[0]}:${time[1]}`);
-//                         exec('mpc volume 70');}, waitTime)
-
-// }
 
 async function getOutputFromCommandLine(cmd) {
     try {
