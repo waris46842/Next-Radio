@@ -5,9 +5,241 @@ const bodyParser = require('body-parser');
 const Radio = require('./models/radio');
 const Files = require('./models/files');
 const { exec } = require('child_process');
+var cron = require('node-cron');
 var fs = require('fs')
 let playlist = []
 var setTimeOut = []
+let today
+
+//sync to DB at 00.00 everyday
+let syncToServer = cron.schedule('* * * * *',async function(){
+    today = new Date(Date.now()).getDay()
+    const radios = await Radio.findById(fid)
+    setMonOpen(radios.MonOpenTime)
+    setMonClose(radios.MonCloseTime)
+    setTueOpen(radios.TueOpenTime)
+    setTueClose(radios.TueCloseTime)
+    setWedOpen(radios.WedOpenTime)
+    setWedClose(radios.WedCloseTime)
+    setThuOpen(radios.ThuOpenTime)
+    setThuClose(radios.ThuCloseTime)
+    setFriOpen(radios.FriOpenTime)
+    setFriClose(radios.FriCloseTime)
+    setSatOpen(radios.SatOpenTime)
+    setSatClose(radios.SatCloseTime)
+    setSunOpen(radios.SunOpenTime)
+    setSunClose(radios.SunCloseTime)
+    // setmusicBeforeOpen(radios.musicBeforeOpen)
+    // setMusicAfterClose(radios.musicAfterClose)
+    // setSilentBeforeOpen(radios.silentBeforeOpen)
+    // setSilentAfterClose(radios.silentAfterClose)
+    // setSpeechBeforeOpen(radios.timeSpeechBeforeOpen)
+    // setSpeechAfterClose(radios.timeSpeechAfterClose)
+    //console.log(radios)
+    //console.log(today)
+});
+
+
+let MonOpenTime = cron.schedule('* * * * 1', function(){
+    console.log('MonOpen');
+});
+let MonCloseTime = cron.schedule('* * * * 1', function(){
+    console.log('MonClose');
+});
+let TueOpenTime = cron.schedule('* * * * 2', function(){
+    console.log('TueOpen');
+});
+let TueCloseTime = cron.schedule('* * * * 2', function(){
+    console.log('TueClose');
+});
+let WedOpenTime = cron.schedule('* * * * 3', function(){
+    console.log('WedOpen');
+});
+let WedCloseTime = cron.schedule('* * * * 3', function(){
+    console.log('WedClose');
+});
+let ThuOpenTime = cron.schedule('* * * * 4', function(){
+    console.log('ThuOpen');
+});
+let ThuCloseTime = cron.schedule('* * * * 4', function(){
+    console.log('ThuClose');
+});
+let FriOpenTime = cron.schedule('* * * * 5', function(){
+    console.log('FriOpen');
+});
+let FriCloseTime = cron.schedule('* * * * 5', function(){
+    console.log('FriClose');
+});
+let SatOpenTime = cron.schedule('* * * * 6', function(){
+    console.log('SatOpen');
+});
+let SatCloseTime = cron.schedule('* * * * 6', function(){
+    console.log('SatClose');
+});
+let SunOpenTime = cron.schedule('* * * * 0', function(){
+    console.log('SunOpen');
+});
+let SunCloseTime = cron.schedule('* * * * 0', function(){
+    console.log('SunClose');
+});
+let musicBeforeOpen = cron.schedule('* * * * *', function(){
+    console.log('musicBeforeOpen');
+});
+let musicAfterClose = cron.schedule('* * * * *', function(){
+    console.log('musicAfterOpen');
+});
+let silentBeforeOpen = cron.schedule('* * * * *', function(){
+    console.log('silentBeforeOpen');
+});
+let silentAfterClose = cron.schedule('* * * * *', function(){
+    console.log('silentAfterClose');
+});
+let timeSpeechBeforeOpen = cron.schedule('* * * * *', function(){
+    console.log('timeSpeechBeforeOpen');
+});
+let timeSpeechAfterClose = cron.schedule('* * * * *', function(){
+    console.log('timeSpeechAfterClose');
+});
+
+async function setMonOpen(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * 1', function(){
+        console.log('Change MonOpenTime');
+    });
+}
+
+async function setTueOpen(time){
+    TueOpenTime.stop()
+    TueOpenTime = cron.schedule('* * * * 2', function(){
+        console.log('Change TueOpenTime');
+    });
+}
+
+async function setWedOpen(time){
+    WedOpenTime.stop()
+    WedOpenTime = cron.schedule('* * * * 3', function(){
+        console.log('Change WedOpenTime');
+    });
+}
+
+async function setThuOpen(time){
+    ThuOpenTime.stop()
+    ThuOpenTime = cron.schedule('* * * * 4', function(){
+        console.log('Change ThuOpenTime');
+    });
+}
+
+async function setFriOpen(time){
+    FriOpenTime.stop()
+    FriOpenTime = cron.schedule('* * * * 5', function(){
+        console.log('Change FriOpenTime');
+    });
+}
+
+async function setSatOpen(time){
+    SatOpenTime.stop()
+    SatOpenTime = cron.schedule('* * * * 6', function(){
+        console.log('Change SatOpenTime');
+    });
+}
+
+async function setSunOpen(time){
+    SunOpenTime.stop()
+    SunOpenTime = cron.schedule('* * * * 0', function(){
+        console.log('Change SunOpenTime');
+    });
+}
+
+async function setMonClose(time){
+    MonCloseTime.stop()
+    MonCloseTime = cron.schedule('* * * * 1', function(){
+        console.log('Change MonCloseTime');
+    });
+}
+
+async function setTueClose(time){
+    TueCloseTime.stop()
+    TueCloseTime = cron.schedule('* * * * 2', function(){
+        console.log('Change TueCloseTime');
+    });
+}
+
+async function setWedClose(time){
+    WedCloseTime.stop()
+    WedCloseTime = cron.schedule('* * * * 3', function(){
+        console.log('Change WedCloseTime');
+    });
+}
+
+async function setThuClose(time){
+    ThuCloseTime.stop()
+    ThuCloseTime = cron.schedule('* * * * 4', function(){
+        console.log('Change ThuCloseTime');
+    });
+}
+
+async function setFriClose(time){
+    FriCloseTime.stop()
+    FriCloseTime = cron.schedule('* * * * 5', function(){
+        console.log('Change FriCloseTime');
+    });
+}
+
+async function setSatClose(time){
+    SatCloseTime.stop()
+    SatCloseTime = cron.schedule('* * * * 6', function(){
+        console.log('Change SatCloseTime');
+    });
+}
+
+async function setSunClose(time){
+    SunCloseTime.stop()
+    SunCloseTime = cron.schedule('* * * * 0', function(){
+        console.log('Change SunCloseTime');
+    });
+}
+
+async function setmusicBeforeOpen(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change musicBeforeOpen');
+    });
+}
+
+async function setMusicAfterClose(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change musicAfterClose');
+    });
+}
+
+async function setSilentBeforeOpen(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change silentBeforeOpen');
+    });
+}
+
+async function setSilentAfterClose(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change silentAfterClose');
+    });
+}
+
+async function setSpeechBeforeOpen(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change speechBeforeOpen');
+    });
+}
+
+async function setSpeechAfterClose(time){
+    MonOpenTime.stop()
+    MonOpenTime = cron.schedule('* * * * *', function(){
+        console.log('Change speechAfterClose');
+    });
+}
 
 fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
     if (err) throw err;
@@ -15,18 +247,18 @@ fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
     playlist = text.split('\n')
 })
 
-//setInterval(sendActiveLastTime, 3000)
+setInterval(sendActiveLastTime, 300000)
 
 var fileNumber = 0
 const fid = '1'
 
-async function convertTimeToMilliSeconds(time) {
-    const hour = parseInt(time.slice(0, 2))
-    const minute = parseInt(time.slice(3, 5))
-    const milliseconds = hour * 3600000 + minute * 60000
-    return milliseconds
+// async function convertTimeToMilliSeconds(time) {
+//     const hour = parseInt(time.slice(0, 2))
+//     const minute = parseInt(time.slice(3, 5))
+//     const milliseconds = hour * 3600000 + minute * 60000
+//     return milliseconds
 
-}
+// }
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -123,6 +355,7 @@ async function interrupt(fileName) {
     const length = parseInt(await getOutputFromCommandLine(`mediainfo --Inform="Audio;%Duration%" /var/lib/mpd/music/"${fileName}"`)) - 150
     clearSetTimeOut()
     exec('mpc clear')
+    console.log(`play ${fileName}`)
     await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
         if (error) {
             return reject(error)
@@ -131,6 +364,7 @@ async function interrupt(fileName) {
         return resolve()
     }
     ))
+    console.log(new Date(Date.now()).getMilliseconds())
     exec('mpc play')
     setTimeout(function () {
         exec('mpc clear');
@@ -158,20 +392,14 @@ async function interrupt(fileName) {
 
 async function interruptAtSpecificTime(time, fileName) {
     const now = Date.now()
-    const day = new Date('June 30, 2020 10:02:00:000')
+    const day = new Date(time)
     const waitTime = day - now
-    setTimeout(function () { exec('mpc play 3') }, waitTime)
+    setTimeout(function () { interrupt(fileName) }, waitTime)
 
     //console.log(day-now)
     console.log(waitTime)
     // console.log(day.getTime())
     // console.log(day.getDate());
-    // console.log(day.getDay())
-    // console.log(day.getHours())
-    // console.log(day.getMinutes())
-    // console.log(day.getSeconds())
-    // console.log(day.getMilliseconds())
-    // console.log(day.getMonth())
     // console.log(day.getFullYear())
 }
 
@@ -243,10 +471,15 @@ client.on('message', async (topic, message) => {
     //exec(x)
 
     if (x === 'plays') {
-        play()
+        //play()
+        task1.stop()
+        task1 = cron.schedule('* * * * *', function(){
+            console.log('running a task 555 minute');
+        });
     }
     else if (x === 'interrupt') {
-        interrupt('A6-01-Sandee Rice-005-16-TM (เพลงข้าวแสนดี แม่ครัว ผมหิวข้าว).mp3')
+        //interrupt('A6-01-Sandee Rice-005-16-TM (เพลงข้าวแสนดี แม่ครัว ผมหิวข้าว).mp3')
+        interruptAtSpecificTime(12.15,'A6-01-Sandee Rice-005-16-TM (เพลงข้าวแสนดี แม่ครัว ผมหิวข้าว).mp3') 
     }
     else if (x === 'getOutput') {
         const cmd = await getOutputFromCommandLine('mpc status')
@@ -255,9 +488,11 @@ client.on('message', async (topic, message) => {
         console.log(status)
     }
     else if (x.slice(0, 9) === 'interrupt') {
-        interruptFile = x.slice(10)
-        console.log(interruptFile)
-        interrupt(interruptFile)
+        const time = x.slice(10,).split('/')[0]
+        const fileName = x.slice(10,).split('/')[1]
+        console.log(time)
+        console.log(fileName)
+        interruptAtSpecificTime(time,fileName)
     }
 
 });
