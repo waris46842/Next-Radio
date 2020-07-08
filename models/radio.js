@@ -32,7 +32,7 @@ const radioSchema = new Schema({
     spotVolume: Number,
     storeIdentityVolume: Number,
     musicBeforeOpen: Number,
-    musicAfterCLose: Number,
+    musicAfterClose: Number,
     silentBeforeOpen: Number,
     silentAfterClose: Number,
     timeSpeechBeforeOpen: Number,
