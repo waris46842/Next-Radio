@@ -8,11 +8,45 @@ const { exec } = require('child_process');
 var cron = require('node-cron');
 var fs = require('fs')
 let playlist = []
+let music = []
+let speech = []
 var setTimeOut = []
 let today
 
+const fid = '1'
+
+setInterval(sendActiveLastTime, 300000)
+
+fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
+    if (err) throw err;
+    var text = logData.toString();
+    playlist = text.split('\n')
+})
+
+fs.readFile('/home/pi/Desktop/Speech', function (err, logData) {
+    if (err) throw err;
+    var text = logData.toString();
+    speech = text.split('\n')
+})
+
+fs.readFile('/home/pi/Desktop/Music', function (err, logData) {
+    if (err) throw err;
+    var text = logData.toString();
+    music = text.split('\n')
+})
+
+async function createLogFile(){
+    var yesterday = new Date(Date.now() - 864e5);
+    const x = yesterday.toString().slice(4,15).split(' ')
+    const dayForFind = x[0] + ' ' + x[1]
+    const file = yesterday.toString().slice(4,15).split(' ').join('-')
+    const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E '${dayForFind}'`)
+    var fileName = `/home/pi/Desktop/log/${file}.txt`;    
+    fs.writeFileSync(fileName, log);
+}
+
 //sync to DB at 00.00 everyday
-let syncToServer = cron.schedule('* * * * *', async function () {
+let syncToServer = cron.schedule('0 0 * * *', async function () {
     const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     today = day[new Date(Date.now()).getDay()]
     const radios = await Radio.findById(fid)
@@ -36,8 +70,7 @@ let syncToServer = cron.schedule('* * * * *', async function () {
     setSilentAfterClose(radios.silentAfterClose)
     setSpeechBeforeOpen(radios.timeSpeechBeforeOpen)
     setSpeechAfterClose(radios.timeSpeechAfterClose)
-    //console.log(radios)
-    //console.log(today)
+    createLogFile()
 });
 
 let MonOpenTime = cron.schedule('* * * * 1', function () {
@@ -101,16 +134,6 @@ let timeSpeechAfterClose = cron.schedule('* * * * *', function () {
     //console.log('timeSpeechAfterClose');
 });
 
-fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
-    if (err) throw err;
-    var text = logData.toString();
-    playlist = text.split('\n')
-})
-
-setInterval(sendActiveLastTime, 300000)
-
-const fid = '1'
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -137,7 +160,7 @@ async function setMonOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     MonOpenTime = cron.schedule(`${minute} ${hour} * * 1`, function () {
-        console.log(`Change MonOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change MonOpenTime to ${hour}:${minute}`);
 }
@@ -147,7 +170,7 @@ async function setTueOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     TueOpenTime = cron.schedule(`${minute} ${hour} * * 2`, function () {
-        console.log(`Change TueOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change TueOpenTime to ${hour}:${minute}`);
 }
@@ -157,7 +180,7 @@ async function setWedOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     WedOpenTime = cron.schedule(`${minute} ${hour} * * 3`, function () {
-        console.log(`Change WedOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change WedOpenTime to ${hour}:${minute}`);
 }
@@ -167,7 +190,7 @@ async function setThuOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     ThuOpenTime = cron.schedule(`${minute} ${hour} * * 4`, function () {
-        console.log(`Change ThuOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change ThuOpenTime to ${hour}:${minute}`);
 }
@@ -177,7 +200,7 @@ async function setFriOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     FriOpenTime = cron.schedule(`${minute} ${hour} * * 5`, function () {
-        console.log(`Change FriOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change SatOpenTime to ${hour}:${minute}`);
 }
@@ -187,7 +210,7 @@ async function setSatOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SatOpenTime = cron.schedule(`${minute} ${hour} * * 6`, function () {
-        console.log(`Change SatOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change SatOpenTime to ${hour}:${minute}`);
 }
@@ -197,7 +220,7 @@ async function setSunOpen(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SunOpenTime = cron.schedule(`${minute} ${hour} * * 0`, function () {
-        console.log(`Change SunOpenTime to ${hour}:${minute}`);
+        play()
     });
     console.log(`Change SunOpenTime to ${hour}:${minute}`);
 }
@@ -207,7 +230,7 @@ async function setMonClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     MonCloseTime = cron.schedule(`${minute} ${hour} * * 1`, function () {
-        console.log(`Change MonCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change MonCloseTime to ${hour}:${minute}`);
 }
@@ -217,7 +240,7 @@ async function setTueClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     TueCloseTime = cron.schedule(`${minute} ${hour} * * 2`, function () {
-        console.log(`Change TueCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change TueCloseTime to ${hour}:${minute}`);
 }
@@ -227,7 +250,7 @@ async function setWedClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     WedCloseTime = cron.schedule(`${minute} ${hour} * * 3`, function () {
-        console.log(`Change WedCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change WedCloseTime to ${hour}:${minute}`);
 }
@@ -237,7 +260,7 @@ async function setThuClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     ThuCloseTime = cron.schedule(`${minute} ${hour} * * 4`, function () {
-        console.log(`Change ThuCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change ThuCloseTime to ${hour}:${minute}`);
 }
@@ -247,7 +270,7 @@ async function setFriClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     FriCloseTime = cron.schedule(`${minute} ${hour} * * 5`, function () {
-        console.log(`Change FriCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change FriCloseTime to ${hour}:${minute}`);
 }
@@ -257,7 +280,7 @@ async function setSatClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SatCloseTime = cron.schedule(`${minute} ${hour} * * 6`, function () {
-        console.log(`Change SatCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change SatCloseTime to ${hour}:${minute}`);
 }
@@ -267,7 +290,7 @@ async function setSunClose(time) {
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SunCloseTime = cron.schedule(`${minute} ${hour} * * 0`, function () {
-        console.log(`Change SunCloseTime to ${hour}:${minute}`);
+        exec('mpc clear')
     });
     console.log(`Change SunCloseTime to ${hour}:${minute}`);
 }
@@ -288,7 +311,11 @@ async function setMusicBeforeOpen(time) {
     const musicBeforeOpenMinute = totalMinute%60
     musicBeforeOpen.stop()
     musicBeforeOpen = cron.schedule(`0 ${musicBeforeOpenMinute} ${musicBeforeOpenHour} * * *`, function () {
-        console.log(`Change musicBeforeOpen to ${musicBeforeOpenHour}:${musicBeforeOpenMinute}`);
+        exec('mpc clear')
+        for(var i=0;i<music.length;i++){
+            exec(`mpc add ${music[i]}`)
+        }
+        exec('mpc play')
     });
     console.log(`Change musicBeforeOpen to ${musicBeforeOpenHour}:${musicBeforeOpenMinute}:0`)
 }
@@ -307,13 +334,17 @@ async function setMusicAfterClose(time) {
     if(time === 1){
         musicAfterClose.stop()
         musicAfterClose = cron.schedule(`${musicAfterCloseMinute} ${musicAfterCloseHour} * * *`, function () {
-            console.log(`Change musicAfterClose to ${musicAfterCloseHour}:${musicAfterCloseMinute}`);
+            exec('mpc clear')
         });
     }
     else{
         musicAfterClose.stop()
         musicAfterClose = cron.schedule(`${closeTimeMinute} ${closeTimeHour} * * *`, function () {
-            console.log(`Change musicAfterClose to ${closeTimeHour}:${closeTimeMinute}`);
+            exec('mpc clear')
+            for(var i=0;i<music.length;i++){
+                exec(`mpc add ${music[i]}`)
+            }
+            exec('mpc play')
         });
     }
     console.log(`Change musicAfterClose to ${closeTimeHour}:${closeTimeMinute}`);
@@ -338,7 +369,7 @@ async function setSilentBeforeOpen(time) {
     silentTimeSecond = totalSecond%60
     silentBeforeOpen.stop()
     silentBeforeOpen = cron.schedule(`${silentTimeSecond} ${silentTimeMinute} ${silentTimeHour} * * *`, function () {
-        console.log(`Change silentBeforeOpen to ${silentTimeHour}:${silentTimeMinute}:${silentTimeSecond}`);
+        exec('mpc clear')
     });
     console.log(`Change silentBeforeOpen to ${silentTimeHour}:${silentTimeMinute}:${silentTimeSecond}`)
 }
@@ -361,7 +392,7 @@ async function setSilentAfterClose(time) {
     silentTimeSecond = totalSecond%60
     silentAfterClose.stop()
     silentAfterClose = cron.schedule(`${silentTimeSecond} ${silentTimeMinute} ${silentTimeHour} * * *`, function () {
-        console.log(`Change silentAfterClose to ${silentTimeHour}:${silentTimeMinute}:${silentTimeSecond}`);
+        exec('mpc clear')
     });
     console.log(`Change silentAfterClose to ${silentTimeHour}:${silentTimeMinute}:${silentTimeSecond}`)
 }
@@ -384,7 +415,11 @@ async function setSpeechBeforeOpen(time) {
     speechTimeSecond = totalSecond%60
     timeSpeechBeforeOpen.stop()
     timeSpeechBeforeOpen = cron.schedule(`${speechTimeSecond} ${speechTimeMinute} ${speechTimeHour} * * *`, function () {
-        console.log(`Change timeSpeechBeforeOpen to ${speechTimeHour}:${speechTimeMinute}:${speechTimeSecond}`);
+        exec('mpc clear')
+        for(var i=0;i<speech.length;i++){
+            exec(`mpc add ${speech[i]}`)
+        }
+        exec('mpc play')
     });
     console.log(`Change timeSpeechBeforeOpen to ${speechTimeHour}:${speechTimeMinute}:${speechTimeSecond}`)
 }
@@ -407,7 +442,11 @@ async function setSpeechAfterClose(time) {
     speechTimeSecond = totalSecond%60
     timeSpeechAfterClose.stop()
     timeSpeechAfterClose = cron.schedule(`${speechTimeSecond} ${speechTimeMinute} ${speechTimeHour} * * *`, function () {
-        console.log(`Change timeSpeechAfterClose to ${speechTimeHour}:${speechTimeMinute}:${speechTimeSecond}`);
+        exec('mpc clear')
+        for(var i=0;i<speech.length;i++){
+            exec(`mpc add ${speech[i]}`)
+        }
+        exec('mpc play')
     });
     console.log(`Change timeSpeechAfterClose to ${speechTimeHour}:${speechTimeMinute}:${speechTimeSecond}`)
 }
@@ -540,9 +579,6 @@ async function interruptAtSpecificTime(time, fileName) {
     const waitTime = day - now
     setTimeout(function () { interrupt(fileName) }, waitTime)
     console.log(waitTime)
-    // console.log(day.getTime())
-    // console.log(day.getDate());
-    // console.log(day.getFullYear())
 }
 
 async function getOutputFromCommandLine(cmd) {
@@ -622,6 +658,9 @@ client.on('message', async (topic, message) => {
         console.log(time)
         console.log(fileName)
         interruptAtSpecificTime(time, fileName)
+    }
+    else if(x === 'showlog'){
+        createLogFile()
     }
 
 });
