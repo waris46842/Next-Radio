@@ -5,8 +5,11 @@ const bodyParser = require('body-parser');
 const Radio = require('./models/radio');
 const Files = require('./models/files');
 const { exec } = require('child_process');
-var cron = require('node-cron');
-var fs = require('fs')
+const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path')
+const AWS = require('aws-sdk');
+const request = require('request');
 let playlist = []
 let music = []
 let speech = []
@@ -34,6 +37,67 @@ fs.readFile('/home/pi/Desktop/Music', function (err, logData) {
     var text = logData.toString();
     music = text.split('\n')
 })
+
+AWS.config.update({region: 'ap-southeast-1'})
+
+var s3 = new AWS.S3({apiVersion: '2006-03-01'});
+
+var uploadParams = {Bucket: 'com.focalsolution.smartradio', Key: '', Body: ''};
+var fileToUpload = '/home/pi/Desktop/Jul-09-2020.txt'
+var fileStream = fs.createReadStream(fileToUpload);
+fileStream.on('error', function(err){
+    console.log('File Error', err);
+});
+uploadParams.Body = fileStream;
+uploadParams.Key = path.basename(fileToUpload);
+
+// s3.upload(uploadParams, function (err, data){
+//     if (err) {
+//         console.log('Error', err);
+//     } if (data) {
+//         console.log('Upload Success', data.Location);
+//     }
+// });
+
+var bucketParams = {
+    Bucket : 'com.focalsolution.smartradio'
+}
+
+// s3.listObjects(bucketParams, function(err, data){
+//     if (err) {
+//         console.log('Error', err);
+//     } else {
+//         console.log('Success',data);
+//     }
+// });
+
+// let read = s3.getObject(
+//     {Bucket: 'com.focalsolution.smartradio', Key: 'SONG-08-เหมือนจะดี-มารีน่า.mp3'},
+//     function (error, data) {
+//         if (error != null) {
+//             console.log('Failed to retrieve an object: ' + error);
+//         } else {
+//             console.log('Loaded ' + data.ContentLength + ' bytes');
+//         }
+//     }
+// ).createReadStream()
+
+// let write = fs.createWriteStream('/home/pi/Desktop/SONG-08-เหมือนจะดี-มารีน่า.mp3')
+// read.pipe(write)
+
+const download = (url, path, callback) => {
+    request.head(url, (err, res, body) => {
+        request(url)
+            .pipe(fs.createWriteStream(path))
+            .on('close', callback)
+    })
+}
+
+// download('https://com.focalsolution.smartradio.s3.amazonaws.com/SONG-08-เหมือนจะดี-มารีน่า.mp3', '/home/pi/Desktop/SONG-08-เหมือนจะดี-มารีน่า.mp3', () => {
+//     console.log('Done')
+// })
+
+//console.log(encodeURI('https://com.focalsolution.smartradio.s3.amazonaws.com/SONG-08-เหมือนจะดี-มารีน่า.mp3'))
 
 async function createLogFile(){
     var yesterday = new Date(Date.now() - 864e5);
@@ -487,6 +551,7 @@ async function getVolume(fileName) {
 
 async function play() {
     exec('mpc clear')
+    await sleep(100)
     for (var i = 0; i < playlist.length; i++) {
         await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
             if (error) {
@@ -660,7 +725,8 @@ client.on('message', async (topic, message) => {
         interruptAtSpecificTime(time, fileName)
     }
     else if(x === 'showlog'){
-        createLogFile()
+        const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 10'`)
+        console.log(log)
     }
 
 });
