@@ -9,7 +9,6 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path')
 const AWS = require('aws-sdk');
-const request = require('request');
 let playlist = []
 let music = []
 let speech = []
@@ -19,8 +18,18 @@ let today
 const fid = '1'
 
 setInterval(sendActiveLastTime, 300000)
+//setInterval(getVolume(getOutputFromCommandLine('mpc status').split('\n')[0]),1000)
+setInterval(async function(){
+    let status = await getOutputFromCommandLine('mpc status')
+    let fileName = status.split('/n')[0]
+    let volume = await getVolume(fileName)
+    exec(`mpc volume ${volume}`)
+    //let x = await getVolume('SONG-08-เหมือนจะดี-มารีน่า.mp3')
+    //console.log(x)
+},500)
 
-fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
+
+fs.readFile('/home/pi/Desktop/H1-1', function (err, logData) {
     if (err) throw err;
     var text = logData.toString();
     playlist = text.split('\n')
@@ -71,33 +80,33 @@ var bucketParams = {
 //     }
 // });
 
-// let read = s3.getObject(
+
+async function getFileFromS3AndAddToMPC(fileName){
+    s3.getObject(
+        {Bucket: 'com.focalsolution.smartradio', Key: fileName},
+        async function (error, data) {
+            if (error != null) {
+                console.log('Failed to retrieve an object: ' + error);
+            } else {
+                await fs.writeFileSync(`/home/pi/Desktop/download/${fileName}`, data.Body);
+                console.log('Loaded ' + data.ContentLength + ' bytes');
+                exec('sudo mv /home/pi/Desktop/download/* /var/lib/mpd/music')
+            }
+        }
+    )
+}
+
+// s3.getObject(
 //     {Bucket: 'com.focalsolution.smartradio', Key: 'SONG-08-เหมือนจะดี-มารีน่า.mp3'},
 //     function (error, data) {
 //         if (error != null) {
 //             console.log('Failed to retrieve an object: ' + error);
 //         } else {
+//             fs.writeFileSync('/home/pi/Desktop/SONG-08-เหมือนจะดี-มารีน่า.mp3', data.Body);
 //             console.log('Loaded ' + data.ContentLength + ' bytes');
 //         }
 //     }
-// ).createReadStream()
-
-// let write = fs.createWriteStream('/home/pi/Desktop/SONG-08-เหมือนจะดี-มารีน่า.mp3')
-// read.pipe(write)
-
-const download = (url, path, callback) => {
-    request.head(url, (err, res, body) => {
-        request(url)
-            .pipe(fs.createWriteStream(path))
-            .on('close', callback)
-    })
-}
-
-// download('https://com.focalsolution.smartradio.s3.amazonaws.com/SONG-08-เหมือนจะดี-มารีน่า.mp3', '/home/pi/Desktop/SONG-08-เหมือนจะดี-มารีน่า.mp3', () => {
-//     console.log('Done')
-// })
-
-//console.log(encodeURI('https://com.focalsolution.smartradio.s3.amazonaws.com/SONG-08-เหมือนจะดี-มารีน่า.mp3'))
+// )
 
 async function createLogFile(){
     var yesterday = new Date(Date.now() - 864e5);
@@ -549,93 +558,147 @@ async function getVolume(fileName) {
     return (vol)
 }
 
-async function play() {
+// async function play() {
+//     exec('mpc clear')
+//     exec('mpc update')
+//     await sleep(100)
+//     for (var i = 0; i < playlist.length; i++) {
+//         await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
+//             if (error) {
+//                 return reject(error)
+//             }
+
+//             return resolve()
+//         }
+//         ))
+//     }
+//     var waitTime = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[0]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 500
+//     let vol = await getVolume(playlist[0])
+//     exec(`mpc volume ${vol}`)
+//     exec('mpc play')
+//     for (var i = 1; i < playlist.length; i++) {
+//         const vol = await getVolume(playlist[i])
+//         const milli = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[i]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 500
+//         //console.log(milli)
+
+//         const timeOut = callNextFile(vol, waitTime)
+//         waitTime = waitTime + parseInt(milli)
+//         console.log(playlist[i])
+//         console.log(waitTime)
+
+//     }
+// }
+
+async function play(){
     exec('mpc clear')
     await sleep(100)
-    for (var i = 0; i < playlist.length; i++) {
-        await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
-            if (error) {
-                return reject(error)
-            }
-
-            return resolve()
-        }
-        ))
-    }
-    var waitTime = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[0]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 500
-    let vol = await getVolume(playlist[0])
-    exec(`mpc volume ${vol}`)
-    exec('mpc play')
-    for (var i = 1; i < playlist.length; i++) {
-        const vol = await getVolume(playlist[i])
-        const milli = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[i]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 500
-        //console.log(milli)
-
-        const timeOut = callNextFile(vol, waitTime)
-        waitTime = waitTime + parseInt(milli)
-        console.log(playlist[i])
-        console.log(waitTime)
-
-    }
-}
-
-async function interrupt(fileName) {
-    const date1 = Date.now()
-    const stringStatus = await getOutputFromCommandLine('mpc status')
-    const status = stringStatus.split('\n')[1].split('   ').join(',').split('  ').join(',').split(' ').join(',').split(',')
-    const number = parseInt(status[1].split('/')[0].slice(1))
-    const time = status[2].split('/')
-    const minuteHavePlayed = time[0].split(':')[0]
-    const secondHavePlayed = time[0].split(':')[1]
-    const minute = time[1].split(':')[0]
-    const second = time[1].split(':')[1]
-    console.log(minute)
-    console.log(second)
-    console.log(minuteHavePlayed)
-    console.log(secondHavePlayed)
-    const length = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 150
-    clearSetTimeOut()
-    exec('mpc clear')
-    console.log(`play ${fileName}`)
-    await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
-        if (error) {
-            return reject(error)
-        }
-
-        return resolve()
-    }
-    ))
-    console.log(new Date(Date.now()).getMilliseconds())
-    exec('mpc play')
-    setTimeout(async function () {
-        exec('mpc clear');
-        for (var i = 0; i < playlist.length; i++) {
+    console.log(playlist.length)
+    for(let i =0; i<playlist.length ;i++){
+        if(playlist[i].length>0){
             await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
                 if (error) {
                     return reject(error)
-                }
-
+                    }
                 return resolve()
             }
             ))
         }
-        exec('mpc volume 0');
-        exec(`mpc play ${number}`);
-        exec(`mpc seek ${minuteHavePlayed}:${secondHavePlayed}`);
-        exec(`mpc volume 50`);
-    }, length);
-    const date2 = Date.now()
-    var waitTime = calculateWaitTime(parseInt(minute) + (parseInt(second) / 100)) - calculateWaitTime(parseInt(minuteHavePlayed) + (parseInt(secondHavePlayed) / 100)) + length + date2 - date1 + 200
-    for (var i = number; i < playlist.length; i++) {
-        //const fileType = await getType(playlist[i])
-        const vol = 50
-        const milli = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[i]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 150
-        exec('mpc play')
-        const timeOut = callNextFile(vol, waitTime)
-        waitTime = waitTime + parseInt(milli)
-        console.log(playlist[i])
-        console.log(waitTime)
     }
+    exec('mpc play')
+}
+
+// async function interrupt(fileName) {
+//     const date1 = Date.now()
+//     const stringStatus = await getOutputFromCommandLine('mpc status')
+//     const status = stringStatus.split('\n')[1].split('   ').join(',').split('  ').join(',').split(' ').join(',').split(',')
+//     const number = parseInt(status[1].split('/')[0].slice(1))
+//     const time = status[2].split('/')
+//     const minuteHavePlayed = time[0].split(':')[0]
+//     const secondHavePlayed = time[0].split(':')[1]
+//     const minute = time[1].split(':')[0]
+//     const second = time[1].split(':')[1]
+//     console.log(minute)
+//     console.log(second)
+//     console.log(minuteHavePlayed)
+//     console.log(secondHavePlayed)
+//     const length = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 150
+//     clearSetTimeOut()
+//     exec('mpc clear')
+//     console.log(`play ${fileName}`)
+//     await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
+//         if (error) {
+//             return reject(error)
+//         }
+
+//         return resolve()
+//     }
+//     ))
+//     console.log(new Date(Date.now()).getMilliseconds())
+//     exec('mpc play')
+//     setTimeout(async function () {
+//         exec('mpc clear');
+//         for (var i = 0; i < playlist.length; i++) {
+//             await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
+//                 if (error) {
+//                     return reject(error)
+//                 }
+
+//                 return resolve()
+//             }
+//             ))
+//         }
+//         exec('mpc volume 0');
+//         exec(`mpc play ${number}`);
+//         exec(`mpc seek ${minuteHavePlayed}:${secondHavePlayed}`);
+//         exec(`mpc volume 50`);
+//     }, length);
+//     const date2 = Date.now()
+//     var waitTime = calculateWaitTime(parseInt(minute) + (parseInt(second) / 100)) - calculateWaitTime(parseInt(minuteHavePlayed) + (parseInt(secondHavePlayed) / 100)) + length + date2 - date1 + 200
+//     for (var i = number; i < playlist.length; i++) {
+//         //const fileType = await getType(playlist[i])
+//         const vol = 50
+//         const milli = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${playlist[i]}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 - 150
+//         exec('mpc play')
+//         const timeOut = callNextFile(vol, waitTime)
+//         waitTime = waitTime + parseInt(milli)
+//         console.log(playlist[i])
+//         console.log(waitTime)
+//     }
+// }
+
+async function interrupt(fileName){
+    let status = await getOutputFromCommandLine('mpc status')
+    let number = status.split('\n')[1].split('#')[1].split('/')[0]
+    let percent = status.split('\n')[1].split('(')[1].split(')')[0]
+    let fileLength = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 -250
+    console.log(number)
+    console.log(percent)
+    console.log(fileLength)
+    exec('mpc clear')
+    await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+        }
+        return resolve()
+        }
+    ))
+    exec('mpc play')
+    setTimeout(async function() {
+        for(let i =0; i<playlist.length ;i++){
+            if(playlist[i].length>0){
+                await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
+                    if (error) {
+                        return reject(error)
+                        }
+                    return resolve()
+                }
+                ))
+            }
+        }
+        exec('mpc volume 0')
+        exec(`mpc play ${number}`)
+        exec(`mpc seek ${percent}`)
+    },fileLength)
 }
 
 async function interruptAtSpecificTime(time, fileName) {
@@ -725,8 +788,9 @@ client.on('message', async (topic, message) => {
         interruptAtSpecificTime(time, fileName)
     }
     else if(x === 'showlog'){
-        const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 10'`)
-        console.log(log)
+        // const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 10'`)
+        // console.log(log)
+        getFileFromS3AndAddToMPC('Jul-09-2020.txt')
     }
 
 });
