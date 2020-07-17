@@ -14,6 +14,7 @@ let music = []
 let speech = []
 var setTimeOut = []
 let today
+let volume = 50
 
 const fid = '1'
 
@@ -22,8 +23,12 @@ setInterval(sendActiveLastTime, 300000)
 setInterval(async function(){
     let status = await getOutputFromCommandLine('mpc status')
     let fileName = status.split('/n')[0]
-    let volume = await getVolume(fileName)
-    exec(`mpc volume ${volume}`)
+    let newVolume = await getVolume(fileName)
+    if(volume !== newVolume){
+        exec(`mpc volume ${newVolume}`)
+        volume = newVolume
+        console.log(newVolume)
+    }
     //let x = await getVolume('SONG-08-เหมือนจะดี-มารีน่า.mp3')
     //console.log(x)
 },500)
@@ -213,7 +218,7 @@ function sleep(ms) {
 
 async function sendActiveLastTime() {
     status = await getOutputFromCommandLine('mpc status')
-    console.log(status)
+    //console.log(status)
     //client.publish('tk/demo2', `${Date.now()} from player ${1} \n${status}`)
     const payload = { 'activeLastTime': Date.now() }
     const radios = await Radio.findByIdAndUpdate(fid, { $set: payload })
@@ -275,7 +280,7 @@ async function setFriOpen(time) {
     FriOpenTime = cron.schedule(`${minute} ${hour} * * 5`, function () {
         play()
     });
-    console.log(`Change SatOpenTime to ${hour}:${minute}`);
+    console.log(`Change FriOpenTime to ${hour}:${minute}`);
 }
 
 async function setSatOpen(time) {
@@ -554,7 +559,7 @@ async function getVolume(fileName) {
     else {
         vol = vol + radios.spotVolume
     }
-    console.log(`vol ${vol}`)
+    //console.log(`vol ${vol}`)
     return (vol)
 }
 
@@ -726,7 +731,8 @@ async function getOutputFromCommandLine(cmd) {
     }
 };
 
-var mongo_uri = 'mongodb+srv://waris46842:Gamerpg46842@next-radio.scrbg.mongodb.net/radio?retryWrites=true&w=majority';
+var mongo_uri = 'mongodb+srv://waris46842:4684246842@next-radio.scrbg.mongodb.net/radio?retryWrites=true&w=majority';
+//var mongo_uri = 'mongodb://192.168.1.194:27017/radio';
 mongoose.Promise = global.Promise;
 mongoose.connect(mongo_uri, { useNewUrlParser: true }).then(
     () => {
@@ -790,7 +796,9 @@ client.on('message', async (topic, message) => {
     else if(x === 'showlog'){
         // const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 10'`)
         // console.log(log)
-        getFileFromS3AndAddToMPC('Jul-09-2020.txt')
+        //getFileFromS3AndAddToMPC('Jul-09-2020.txt')
+        const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
+        console.log(log)
     }
 
 });
