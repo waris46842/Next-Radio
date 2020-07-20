@@ -214,7 +214,6 @@ function sleep(ms) {
 }
 
 async function sendActiveLastTime() {
-    status = await getOutputFromCommandLine('mpc status')
     //console.log(status)
     //client.publish('tk/demo2', `${Date.now()} from player ${1} \n${status}`)
     const payload = { 'activeLastTime': Date.now() }
@@ -590,6 +589,7 @@ async function interrupt(fileName){
     ))
     exec('mpc play')
     setTimeout(async function() {
+        exec('mpc clear')
         for(let i =0; i<playlist.length ;i++){
             if(playlist[i].length>0){
                 await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
@@ -635,7 +635,7 @@ async function getOutputFromCommandLine(cmd) {
 //var mongo_uri = 'mongodb+srv://waris46842:4684246842@next-radio.scrbg.mongodb.net/radio?retryWrites=true&w=majority';
 var mongo_uri = 'mongodb://waris46842:46842@192.168.1.194:27017/Next-Radio?authSource=admin';
 mongoose.Promise = global.Promise;
-mongoose.connect(mongo_uri, { useNewUrlParser: true }).then(
+mongoose.connect(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true}).then(
     () => {
         console.log('[success] task 2 : connected to the database ');
     },
@@ -695,7 +695,7 @@ client.on('message', async (topic, message) => {
         interruptAtSpecificTime(time, fileName)
     }
     else if(x === 'showlog'){
-        //getFileFromS3AndAddToMPC('Jul-09-2020.txt')
+        //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
         const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
         console.log(log)
     }
