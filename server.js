@@ -12,13 +12,14 @@ const AWS = require('aws-sdk');
 let playlist = []
 let music = []
 let speech = []
-var setTimeOut = []
 let today
 let volume = 50
-
+let timeToSendActive = 300000
 const fid = '1'
 
-setInterval(sendActiveLastTime, 300000)
+//setAPN()
+setInterval(sendActiveLastTime, timeToSendActive)
+
 setInterval(async function(){
     let status = await getOutputFromCommandLine('mpc status')
     let fileName = status.split('/n')[0]
@@ -30,23 +31,95 @@ setInterval(async function(){
     }
 },500)
 
+async function setTimeToSendActive(time){
+    timeToSendActive = time
+}
+
+async function setAPN(){
+    await new Promise((resolve, reject) => exec(`sudo qmicli -d /dev/cdc-wdm0 --dms-set-operating-mode='online'`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+    await new Promise((resolve, reject) => exec(`sudo ip link set wwan0 down`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+    await new Promise((resolve, reject) => exec(`echo 'Y' | sudo tee /sys/class/net/wwan0/qmi/raw_ip`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+    await new Promise((resolve, reject) => exec(`sudo ip link set wwan0 up`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+    await new Promise((resolve, reject) => exec(`sudo qmicli -p -d /dev/cdc-wdm0 --device-open-net='net-raw-ip|net-no-qos-header' --wds-start-network="apn='internet',username='true',password='true',ip-type=4" --client-no-release-cid`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+    await new Promise((resolve, reject) => exec(`sudo udhcpc -i wwan0`, (error, stdout, stderror) => {
+        if (error) {
+            return reject(error)
+            }
+        return resolve()
+    }
+    ))
+}
 
 fs.readFile('/home/pi/Desktop/H1-1', function (err, logData) {
-    if (err) throw err;
-    var text = logData.toString();
-    playlist = text.split('\n')
+    if (err){
+        fs.readFile('/home/pi/Desktop/Default', function (err, logData) {
+            if (err) throw err;
+            var text = logData.toString();
+            playlist = text.split('\n')
+        })
+    }
+    else{
+        var text = logData.toString();
+        playlist = text.split('\n')
+    }
 })
 
 fs.readFile('/home/pi/Desktop/Speech', function (err, logData) {
-    if (err) throw err;
-    var text = logData.toString();
-    speech = text.split('\n')
+    if (err){
+        fs.readFile('/home/pi/Desktop/DefaultSpeech', function (err, logData) {
+            if (err) throw err;
+            var text = logData.toString();
+            speech = text.split('\n')
+        })
+    }
+    else{
+        var text = logData.toString();
+        speech = text.split('\n')
+    }
 })
 
 fs.readFile('/home/pi/Desktop/Music', function (err, logData) {
-    if (err) throw err;
-    var text = logData.toString();
-    music = text.split('\n')
+    if (err){
+        fs.readFile('/home/pi/Desktop/DefaultMusic', function (err, logData) {
+            if (err) throw err;
+            var text = logData.toString();
+            music = text.split('\n')
+        })
+    }
+    else{
+        var text = logData.toString();
+        music = text.split('\n')
+    }
 })
 
 AWS.config.update({region: 'ap-southeast-1'})
@@ -69,6 +142,19 @@ uploadParams.Key = path.basename(fileToUpload);
 //         console.log('Upload Success', data.Location);
 //     }
 // });
+
+async function upload(location){
+    fileStream = fs.createReadStream(location)
+    uploadParams.Body = fileStream
+    uploadParams.Key = path.basename(location)
+    s3.upload(uploadParams, function (err, data){
+        if(err){
+            console.log('Error', err);
+        } if (data) {
+            console.log('Upload Success', data.Location);
+        }
+    })
+}
 
 // var bucketParams = {
 //     Bucket : 'com.focalsolution.smartradio'
@@ -121,7 +207,7 @@ async function createLogFile(){
 }
 
 //sync to DB at 00.00 everyday
-let syncToServer = cron.schedule('0 0 * * *', async function () {
+let syncToServer = cron.schedule('* * * * *', async function () {
     const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     today = day[new Date(Date.now()).getDay()]
     const radios = await Radio.findById(fid)
@@ -145,6 +231,9 @@ let syncToServer = cron.schedule('0 0 * * *', async function () {
     setSilentAfterClose(radios.silentAfterClose)
     setSpeechBeforeOpen(radios.timeSpeechBeforeOpen)
     setSpeechAfterClose(radios.timeSpeechAfterClose)
+    setTimeToSendActive(radios.heartbeatTime)
+    getFreeSpace()
+    //setTimeToSendLog(radios.timeForLog)
     //createLogFile()
 });
 
@@ -208,25 +297,24 @@ let timeSpeechBeforeOpen = cron.schedule('* * * * *', function () {
 let timeSpeechAfterClose = cron.schedule('* * * * *', function () {
     //console.log('timeSpeechAfterClose');
 });
+let sendLogAtSpecificTime = cron.schedule('* * * * *', function(){
+    console.log('sendLogAtSpecificTime');
+})
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function sendActiveLastTime() {
-    //console.log(status)
-    //client.publish('tk/demo2', `${Date.now()} from player ${1} \n${status}`)
-    const payload = { 'activeLastTime': Date.now() }
-    const radios = await Radio.findByIdAndUpdate(fid, { $set: payload })
+async function getFreeSpace(){
+    const status = await getOutputFromCommandLine(`df -Bm | grep -E '/dev/root'`)
+    const freeSpace = parseInt(status.split('M')[2])+'MB'
+    const payload = {'freeSpace': freeSpace}
+    const radios = await Radio.findByIdAndUpdate(fid, {$set: payload})
 }
 
-async function clearSetTimeOut() {
-    if (setTimeOut.length > 0) {
-        for (let id in setTimeOut) {
-            clearTimeout(setTimeOut[id])
-        }
-        setTimeOut = []
-    }
+async function sendActiveLastTime() {
+    const payload = { 'activeLastTime': Date.now() }
+    const radios = await Radio.findByIdAndUpdate(fid, { $set: payload })
 }
 
 async function setMonOpen(time) {
@@ -367,6 +455,21 @@ async function setSunClose(time) {
         exec('mpc clear')
     });
     console.log(`Change SunCloseTime to ${hour}:${minute}`);
+}
+
+async function setTimeToSendLog(timeArray){
+    timeString = timeArray.toString()
+    sendLogAtSpecificTime = cron.schedule(`* ${timeString} * * *`,async function () {
+        const today = new Date(Date.now());
+        const x = today.toString().slice(4,15).split(' ')
+        const dayForFind = x[0] + ' ' + x[1]
+        const file = today.toString().slice(4,15).split(' ').join('-')
+        const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E '${dayForFind}'`)
+        var fileName = `/home/pi/Desktop/log/${file}.txt`;    
+        fs.writeFileSync(fileName, log);
+        upload(`/home/pi/Desktop/${file}.txt`)
+    });
+    console.log(`Change setTimeToLog to ${timeString}`);
 }
 
 async function setMusicBeforeOpen(time) {
@@ -696,8 +799,8 @@ client.on('message', async (topic, message) => {
     }
     else if(x === 'showlog'){
         //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
-        const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
-        console.log(log)
+        //const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
+        //console.log(log)
     }
 
 });
