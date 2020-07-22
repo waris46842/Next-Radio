@@ -17,7 +17,7 @@ let volume = 50
 let timeToSendActive = 300000
 const fid = '1'
 
-//setAPN()
+setAPN()
 setInterval(sendActiveLastTime, timeToSendActive)
 
 setInterval(async function(){
@@ -233,7 +233,8 @@ let syncToServer = cron.schedule('* * * * *', async function () {
     setSpeechAfterClose(radios.timeSpeechAfterClose)
     setTimeToSendActive(radios.heartbeatTime)
     getFreeSpace()
-    //setTimeToSendLog(radios.timeForLog)
+    setTimeToSendLog(radios.timeForLog)
+    //console.log(radios.timeForLog)
     //createLogFile()
 });
 
@@ -459,15 +460,15 @@ async function setSunClose(time) {
 
 async function setTimeToSendLog(timeArray){
     timeString = timeArray.toString()
-    sendLogAtSpecificTime = cron.schedule(`* ${timeString} * * *`,async function () {
+    sendLogAtSpecificTime = cron.schedule(`0 ${timeString} * * *`,async function () {
         const today = new Date(Date.now());
         const x = today.toString().slice(4,15).split(' ')
         const dayForFind = x[0] + ' ' + x[1]
         const file = today.toString().slice(4,15).split(' ').join('-')
         const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E '${dayForFind}'`)
-        var fileName = `/home/pi/Desktop/log/${file}.txt`;    
+        var fileName = `/home/pi/Desktop/log/${file}.txt`;   
         fs.writeFileSync(fileName, log);
-        upload(`/home/pi/Desktop/${file}.txt`)
+        upload(`/home/pi/Desktop/log/${file}.txt`)
     });
     console.log(`Change setTimeToLog to ${timeString}`);
 }
@@ -730,8 +731,9 @@ async function getOutputFromCommandLine(cmd) {
         })
         return child
     } catch (e) {
-        console.error(e)
-        throw e;
+        //console.error(e)
+        //throw e;
+        return ''
     }
 };
 
