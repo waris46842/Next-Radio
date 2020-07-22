@@ -234,7 +234,6 @@ let syncToServer = cron.schedule('* * * * *', async function () {
     setTimeToSendActive(radios.heartbeatTime)
     getFreeSpace()
     setTimeToSendLog(radios.timeForLog)
-    //console.log(radios.timeForLog)
     //createLogFile()
 });
 
@@ -281,22 +280,22 @@ let SunCloseTime = cron.schedule('* * * * 0', function () {
     console.log('SunClose');
 });
 let musicBeforeOpen = cron.schedule('* * * * *', function () {
-    //console.log('musicBeforeOpen');
+    console.log('musicBeforeOpen');
 });
 let musicAfterClose = cron.schedule('* * * * *', function () {
-    //console.log('musicAfterOpen');
+    console.log('musicAfterOpen');
 });
 let silentBeforeOpen = cron.schedule('* * * * *', function () {
-    //console.log('silentBeforeOpen');
+    console.log('silentBeforeOpen');
 });
 let silentAfterClose = cron.schedule('* * * * *', function () {
-    //console.log('silentAfterClose');
+    console.log('silentAfterClose');
 });
 let timeSpeechBeforeOpen = cron.schedule('* * * * *', function () {
-    //console.log('timeSpeechBeforeOpen');
+    console.log('timeSpeechBeforeOpen');
 });
 let timeSpeechAfterClose = cron.schedule('* * * * *', function () {
-    //console.log('timeSpeechAfterClose');
+    console.log('timeSpeechAfterClose');
 });
 let sendLogAtSpecificTime = cron.schedule('* * * * *', function(){
     console.log('sendLogAtSpecificTime');
@@ -319,7 +318,7 @@ async function sendActiveLastTime() {
 }
 
 async function setMonOpen(time) {
-    MonOpenTime.stop()
+    MonOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     MonOpenTime = cron.schedule(`${minute} ${hour} * * 1`, function () {
@@ -329,7 +328,7 @@ async function setMonOpen(time) {
 }
 
 async function setTueOpen(time) {
-    TueOpenTime.stop()
+    TueOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     TueOpenTime = cron.schedule(`${minute} ${hour} * * 2`, function () {
@@ -339,7 +338,7 @@ async function setTueOpen(time) {
 }
 
 async function setWedOpen(time) {
-    WedOpenTime.stop()
+    WedOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     WedOpenTime = cron.schedule(`${minute} ${hour} * * 3`, function () {
@@ -349,7 +348,7 @@ async function setWedOpen(time) {
 }
 
 async function setThuOpen(time) {
-    ThuOpenTime.stop()
+    ThuOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     ThuOpenTime = cron.schedule(`${minute} ${hour} * * 4`, function () {
@@ -359,7 +358,7 @@ async function setThuOpen(time) {
 }
 
 async function setFriOpen(time) {
-    FriOpenTime.stop()
+    FriOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     FriOpenTime = cron.schedule(`${minute} ${hour} * * 5`, function () {
@@ -369,7 +368,7 @@ async function setFriOpen(time) {
 }
 
 async function setSatOpen(time) {
-    SatOpenTime.stop()
+    SatOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SatOpenTime = cron.schedule(`${minute} ${hour} * * 6`, function () {
@@ -379,7 +378,7 @@ async function setSatOpen(time) {
 }
 
 async function setSunOpen(time) {
-    SunOpenTime.stop()
+    SunOpenTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SunOpenTime = cron.schedule(`${minute} ${hour} * * 0`, function () {
@@ -389,7 +388,7 @@ async function setSunOpen(time) {
 }
 
 async function setMonClose(time) {
-    MonCloseTime.stop()
+    MonCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     MonCloseTime = cron.schedule(`${minute} ${hour} * * 1`, function () {
@@ -399,7 +398,7 @@ async function setMonClose(time) {
 }
 
 async function setTueClose(time) {
-    TueCloseTime.stop()
+    TueCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     TueCloseTime = cron.schedule(`${minute} ${hour} * * 2`, function () {
@@ -409,7 +408,7 @@ async function setTueClose(time) {
 }
 
 async function setWedClose(time) {
-    WedCloseTime.stop()
+    WedCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     WedCloseTime = cron.schedule(`${minute} ${hour} * * 3`, function () {
@@ -419,7 +418,7 @@ async function setWedClose(time) {
 }
 
 async function setThuClose(time) {
-    ThuCloseTime.stop()
+    ThuCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     ThuCloseTime = cron.schedule(`${minute} ${hour} * * 4`, function () {
@@ -429,7 +428,7 @@ async function setThuClose(time) {
 }
 
 async function setFriClose(time) {
-    FriCloseTime.stop()
+    FriCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     FriCloseTime = cron.schedule(`${minute} ${hour} * * 5`, function () {
@@ -439,7 +438,7 @@ async function setFriClose(time) {
 }
 
 async function setSatClose(time) {
-    SatCloseTime.stop()
+    SatCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SatCloseTime = cron.schedule(`${minute} ${hour} * * 6`, function () {
@@ -449,7 +448,7 @@ async function setSatClose(time) {
 }
 
 async function setSunClose(time) {
-    SunCloseTime.stop()
+    SunCloseTime.destroy()
     const hour = time.slice(0, 2)
     const minute = time.slice(3, 5)
     SunCloseTime = cron.schedule(`${minute} ${hour} * * 0`, function () {
@@ -459,6 +458,7 @@ async function setSunClose(time) {
 }
 
 async function setTimeToSendLog(timeArray){
+    sendLogAtSpecificTime.destroy()
     timeString = timeArray.toString()
     sendLogAtSpecificTime = cron.schedule(`0 ${timeString} * * *`,async function () {
         const today = new Date(Date.now());
@@ -766,7 +766,7 @@ app.listen(port, () => {
 
 const mqtt = require('mqtt');
 
-const MQTT_SERVER = 'test.mosquitto.org';
+const MQTT_SERVER = '192.168.1.194';
 const MQTT_PORT = '1883';
 
 var client = mqtt.connect({
@@ -776,7 +776,7 @@ var client = mqtt.connect({
 
 client.on('connect', function () {
     console.log('MQTT Connect');
-    client.subscribe('tk/demo', function (err) {
+    client.subscribe('porsche', function (err) {
         if (err) {
             console.log(err);
         }
