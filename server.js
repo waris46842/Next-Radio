@@ -15,7 +15,8 @@ let speech = []
 let today
 let volume = 50
 let timeToSendActive = 300000
-const fid = '1'
+let fid = '1'
+let group = 'Group1'
 
 setAPN()
 setInterval(sendActiveLastTime, timeToSendActive)
@@ -776,11 +777,16 @@ var client = mqtt.connect({
 
 client.on('connect', function () {
     console.log('MQTT Connect');
-    client.subscribe('porsche', function (err) {
+    client.subscribe(fid, function (err) {
         if (err) {
             console.log(err);
         }
     });
+    client.subscribe(group, function (err) {
+        if (err) {
+            console.log(err);
+        }
+    })
 });
 
 client.on('message', async (topic, message) => {
