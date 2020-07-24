@@ -39,7 +39,8 @@ async function setTimeToSendActive(time){
 async function setAPN(){
     await new Promise((resolve, reject) => exec(`sudo qmicli -d /dev/cdc-wdm0 --dms-set-operating-mode='online'`, (error, stdout, stderror) => {
         if (error) {
-            return reject(error)
+            exec(`sudo qmicli -d /dev/cdc-wdm0 --dms-set-operating-mode='online'`)
+            //return reject(error)
             }
         return resolve()
     }
@@ -65,7 +66,7 @@ async function setAPN(){
         return resolve()
     }
     ))
-    await new Promise((resolve, reject) => exec(`sudo qmicli -p -d /dev/cdc-wdm0 --device-open-net='net-raw-ip|net-no-qos-header' --wds-start-network="apn='internet',username='true',password='true',ip-type=4" --client-no-release-cid`, (error, stdout, stderror) => {
+    await new Promise((resolve, reject) => exec(`sudo qmicli -p -d /dev/cdc-wdm0 --device-open-net='net-raw-ip|net-no-qos-header' --wds-start-network="apn='internet',ip-type=4" --client-no-release-cid`, (error, stdout, stderror) => {
         if (error) {
             return reject(error)
             }
@@ -81,7 +82,7 @@ async function setAPN(){
     ))
 }
 
-fs.readFile('/home/pi/Desktop/H1-1', function (err, logData) {
+fs.readFile('/home/pi/Desktop/H1', function (err, logData) {
     if (err){
         fs.readFile('/home/pi/Desktop/Default', function (err, logData) {
             if (err) throw err;
@@ -678,6 +679,7 @@ async function play(){
 
 async function interrupt(fileName){
     let status = await getOutputFromCommandLine('mpc status')
+    let stoppedFile = status.split('\n')[0]
     let number = status.split('\n')[1].split('#')[1].split('/')[0]
     let percent = status.split('\n')[1].split('(')[1].split(')')[0]
     let fileLength = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 -250
@@ -692,6 +694,8 @@ async function interrupt(fileName){
         return resolve()
         }
     ))
+    volume = await getVolume(fileName)
+    exec(`mpc volume ${volume}`)
     exec('mpc play')
     setTimeout(async function() {
         exec('mpc clear')
@@ -706,9 +710,11 @@ async function interrupt(fileName){
                 ))
             }
         }
+        volume = 0
         exec('mpc volume 0')
         exec(`mpc play ${number}`)
         exec(`mpc seek ${percent}`)
+        //exec(`mpc volume ${await getVolume(stoppedFile)}`)
     },fileLength)
 }
 
@@ -806,6 +812,8 @@ client.on('message', async (topic, message) => {
         interruptAtSpecificTime(time, fileName)
     }
     else if(x === 'showlog'){
+        const t = await Files.find({})
+        console.log(t.length)
         //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
         //const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
         //console.log(log)
