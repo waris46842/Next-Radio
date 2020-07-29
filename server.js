@@ -3,7 +3,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const Radio = require('./models/radio');
-const Files = require('./models/files');
+//const Files = require('./models/files');
 const { exec } = require('child_process');
 const cron = require('node-cron');
 const fs = require('fs');
@@ -19,7 +19,9 @@ let fid = '1'
 let group = 'Group1'
 
 setAPN()
+
 exec('mpc clear')
+
 setInterval(sendActiveLastTime, timeToSendActive)
 
 setInterval(async function(){
@@ -200,7 +202,7 @@ async function getFileFromS3AndAddToMPC(fileName){
 // )
 
 async function createLogFile(){
-    var yesterday = new Date(Date.now() - 864e5);
+    let yesterday = new Date(Date.now() - 864e5);
     const x = yesterday.toString().slice(4,15).split(' ')
     const dayForFind = x[0] + ' ' + x[1]
     const file = yesterday.toString().slice(4,15).split(' ').join('-')
@@ -210,7 +212,7 @@ async function createLogFile(){
 }
 
 //sync to DB at 00.00 everyday
-let syncToServer = cron.schedule('* * * * *', async function () {
+let syncToServer = cron.schedule('0 0 * * *', async function () {
     const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     today = day[new Date(Date.now()).getDay()]
     const radios = await Radio.findById(fid)
@@ -242,67 +244,67 @@ let syncToServer = cron.schedule('* * * * *', async function () {
 });
 
 let MonOpenTime = cron.schedule('* * * * 1', function () {
-    console.log('MonOpen');
+    //console.log('MonOpen');
 });
 let MonCloseTime = cron.schedule('* * * * 1', function () {
-    console.log('MonClose');
+    //console.log('MonClose');
 });
 let TueOpenTime = cron.schedule('* * * * 2', function () {
-    console.log('TueOpen');
+    //console.log('TueOpen');
 });
 let TueCloseTime = cron.schedule('* * * * 2', function () {
-    console.log('TueClose');
+    //console.log('TueClose');
 });
 let WedOpenTime = cron.schedule('* * * * 3', function () {
-    console.log('WedOpen');
+    //console.log('WedOpen');
 });
 let WedCloseTime = cron.schedule('* * * * 3', function () {
-    console.log('WedClose');
+    //console.log('WedClose');
 });
 let ThuOpenTime = cron.schedule('* * * * 4', function () {
-    console.log('ThuOpen');
+    //console.log('ThuOpen');
 });
 let ThuCloseTime = cron.schedule('* * * * 4', function () {
-    console.log('ThuClose');
+    //console.log('ThuClose');
 });
 let FriOpenTime = cron.schedule('* * * * 5', function () {
-    console.log('FriOpen');
+    //console.log('FriOpen');
 });
 let FriCloseTime = cron.schedule('* * * * 5', function () {
-    console.log('FriClose');
+    //console.log('FriClose');
 });
 let SatOpenTime = cron.schedule('* * * * 6', function () {
-    console.log('SatOpen');
+    //console.log('SatOpen');
 });
 let SatCloseTime = cron.schedule('* * * * 6', function () {
-    console.log('SatClose');
+    //console.log('SatClose');
 });
 let SunOpenTime = cron.schedule('* * * * 0', function () {
-    console.log('SunOpen');
+    //console.log('SunOpen');
 });
 let SunCloseTime = cron.schedule('* * * * 0', function () {
-    console.log('SunClose');
+    //console.log('SunClose');
 });
 let musicBeforeOpen = cron.schedule('* * * * *', function () {
-    console.log('musicBeforeOpen');
+    //console.log('musicBeforeOpen');
 });
 let musicAfterClose = cron.schedule('* * * * *', function () {
-    console.log('musicAfterOpen');
+    //console.log('musicAfterOpen');
 });
 let silentBeforeOpen = cron.schedule('* * * * *', function () {
-    console.log('silentBeforeOpen');
+    //console.log('silentBeforeOpen');
 });
 let silentAfterClose = cron.schedule('* * * * *', function () {
-    console.log('silentAfterClose');
+    //console.log('silentAfterClose');
 });
 let timeSpeechBeforeOpen = cron.schedule('* * * * *', function () {
-    console.log('timeSpeechBeforeOpen');
+    //console.log('timeSpeechBeforeOpen');
 });
 let timeSpeechAfterClose = cron.schedule('* * * * *', function () {
-    console.log('timeSpeechAfterClose');
+    //console.log('timeSpeechAfterClose');
 });
-let sendLogAtSpecificTime = cron.schedule('* * * * *', function(){
-    console.log('sendLogAtSpecificTime');
+let sendLogAtSpecificTime = cron.schedule('* * * * *', function() {
+    //console.log('sendLogAtSpecificTime');
 })
 
 function sleep(ms) {
@@ -499,7 +501,7 @@ async function setMusicBeforeOpen(time) {
     let totalMinute = parseInt(openTimeHour)*60 + parseInt(openTimeMinute) - time
     const musicBeforeOpenHour = Math.floor(totalMinute/60)
     const musicBeforeOpenMinute = totalMinute%60
-    musicBeforeOpen.stop()
+    musicBeforeOpen.destroy()
     musicBeforeOpen = cron.schedule(`0 ${musicBeforeOpenMinute} ${musicBeforeOpenHour} * * *`, function () {
         exec('mpc clear')
         for(var i=0;i<music.length;i++){
@@ -522,17 +524,18 @@ async function setMusicAfterClose(time) {
     else if (today === 'Sat') { closeTimeHour = radios.SatCloseTime.slice(0, 2); closeTimeMinute = radios.SatCloseTime.slice(3, 5) }
     else if (today === 'Sun') { closeTimeHour = radios.SunCloseTime.slice(0, 2); closeTimeMinute = radios.SunCloseTime.slice(3, 5) }
     if(time === 1){
-        musicAfterClose.stop()
-        musicAfterClose = cron.schedule(`${musicAfterCloseMinute} ${musicAfterCloseHour} * * *`, function () {
+        musicAfterClose.destroy()
+        musicAfterClose = cron.schedule(`${closeTimeMinute} ${closeTimeHour} * * *`, function () {
             exec('mpc clear')
         });
     }
     else{
         let playTime = (parseInt(closeTimeHour)*60 + parseInt(closeTimeMinute) + time)*60000
-        musicAfterClose.stop()
+        musicAfterClose.destroy()
         musicAfterClose = cron.schedule(`${closeTimeMinute} ${closeTimeHour} * * *`, function () {
             exec('mpc clear')
-            for(var i=0;i<music.length;i++){
+            for(let i=0;i<music.length;i++){
+                console.log(music[i])
                 exec(`mpc add ${music[i]}`)
             }
             exec('mpc play')
@@ -561,7 +564,7 @@ async function setSilentBeforeOpen(time) {
     silentTimeHour = Math.floor(totalSecond/3600)
     silentTimeMinute = (Math.floor(totalSecond/60))%60
     silentTimeSecond = totalSecond%60
-    silentBeforeOpen.stop()
+    silentBeforeOpen.destroy()
     silentBeforeOpen = cron.schedule(`${silentTimeSecond} ${silentTimeMinute} ${silentTimeHour} * * *`, function () {
         exec('mpc clear')
     });
@@ -584,7 +587,7 @@ async function setSilentAfterClose(time) {
     silentTimeHour = Math.floor(totalSecond/3600)
     silentTimeMinute = (Math.floor(totalSecond/60))%60
     silentTimeSecond = totalSecond%60
-    silentAfterClose.stop()
+    silentAfterClose.destroy()
     silentAfterClose = cron.schedule(`${silentTimeSecond} ${silentTimeMinute} ${silentTimeHour} * * *`, function () {
         exec('mpc clear')
     });
@@ -607,7 +610,7 @@ async function setSpeechBeforeOpen(time) {
     speechTimeHour = Math.floor(totalSecond/3600)
     speechTimeMinute = (Math.floor(totalSecond/60))%60
     speechTimeSecond = totalSecond%60
-    timeSpeechBeforeOpen.stop()
+    timeSpeechBeforeOpen.destroy()
     timeSpeechBeforeOpen = cron.schedule(`${speechTimeSecond} ${speechTimeMinute} ${speechTimeHour} * * *`, function () {
         exec('mpc clear')
         for(var i=0;i<speech.length;i++){
@@ -634,7 +637,7 @@ async function setSpeechAfterClose(time) {
     speechTimeHour = Math.floor(totalSecond/3600)
     speechTimeMinute = (Math.floor(totalSecond/60))%60
     speechTimeSecond = totalSecond%60
-    timeSpeechAfterClose.stop()
+    timeSpeechAfterClose.destroy()
     timeSpeechAfterClose = cron.schedule(`${speechTimeSecond} ${speechTimeMinute} ${speechTimeHour} * * *`, function () {
         exec('mpc clear')
         for(var i=0;i<speech.length;i++){
@@ -686,61 +689,6 @@ async function play(){
     }
     exec('mpc play')
 }
-
-// async function interrupt2(fileName, time){
-//     const now = Date.now()
-//     const day = new Date(time)
-//     const waitTime = day - now
-//     let fileLength
-//     let number
-//     let percent
-//     let stoppedFile
-//     console.log(waitTime)
-//     setTimeout(async function() {
-//         let status = await getOutputFromCommandLine('mpc status')
-//         console.log(status+555)
-//         stoppedFile = status.split('\n')[0]
-//         number = status.split('\n')[1].split('#')[1].split('/')[0]
-//         percent = status.split('\n')[1].split('(')[1].split(')')[0]
-//         fileLength = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 -250
-//         console.log(number)
-//         console.log(percent)
-//         console.log(fileLength)
-//         exec('mpc clear')
-//         await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
-//             if (error) {
-//                 return reject(error)
-//             }
-//             return resolve()
-//             }
-//         ))
-//         volume = await getVolume(fileName)
-//         exec(`mpc volume ${volume}`)
-//     }, waitTime)
-//     setTimeout(async function(){
-//         exec(`mpc play`)
-//     },waitTime+1000)
-//     setTimeout(async function() {
-//         exec('mpc clear')
-//         for(let i =0; i<playlist.length ;i++){
-//             if(playlist[i].length>0){
-//                 await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
-//                     if (error) {
-//                         return reject(error)
-//                         }
-//                     return resolve()
-//                 }
-//                 ))
-//             }
-//         }
-//         volume = 0
-//         exec('mpc volume 0')
-//         exec(`mpc play ${number}`)
-//         exec(`mpc seek ${percent}`)
-//         exec(`mpc volume ${await getVolume(stoppedFile)}`)
-//     },fileLength+waitTime+1000)
-    
-// }
 
 async function interrupt(fileName){
     let status = await getOutputFromCommandLine('mpc status')
@@ -812,7 +760,7 @@ async function getOutputFromCommandLine(cmd) {
 //var mongo_uri = 'mongodb+srv://waris46842:4684246842@next-radio.scrbg.mongodb.net/radio?retryWrites=true&w=majority';
 var mongo_uri = 'mongodb://waris46842:46842@192.168.1.194:27017/Next-Radio?authSource=admin';
 mongoose.Promise = global.Promise;
-mongoose.connect(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true}).then(
+mongoose.connect(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false}).then(
     () => {
         console.log('[success] task 2 : connected to the database ');
     },
@@ -874,8 +822,8 @@ client.on('message', async (topic, message) => {
         const fileName = x.slice(10).split('/')[1]
         console.log(time)
         console.log(fileName)
-        //interruptAtSpecificTime(time, fileName)
-        interrupt2(fileName, time)
+        interruptAtSpecificTime(time, fileName)
+        //interrupt2(fileName, time)
     }
     else if(x === 'showlog'){
         //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
