@@ -19,6 +19,7 @@ let fid = '1'
 let group = 'Group1'
 
 setAPN()
+exec('mpc clear')
 setInterval(sendActiveLastTime, timeToSendActive)
 
 setInterval(async function(){
@@ -235,6 +236,7 @@ let syncToServer = cron.schedule('* * * * *', async function () {
     setSpeechAfterClose(radios.timeSpeechAfterClose)
     setTimeToSendActive(radios.heartbeatTime)
     getFreeSpace()
+    getSignalStrength()
     setTimeToSendLog(radios.timeForLog)
     //createLogFile()
 });
@@ -311,6 +313,14 @@ async function getFreeSpace(){
     const status = await getOutputFromCommandLine(`df -Bm | grep -E '/dev/root'`)
     const freeSpace = parseInt(status.split('M')[2])+'MB'
     const payload = {'freeSpace': freeSpace}
+    const radios = await Radio.findByIdAndUpdate(fid, {$set: payload})
+}
+
+async function getSignalStrength(){
+    const status = await getOutputFromCommandLine('sudo qmicli -d /dev/cdc-wdm0 --nas-get-signal-strength')
+    const listSignal = status.split(':')
+    const signal = listSignal[listSignal.length-1].split('\n')[0].split(`'`)[1]
+    const payload = {'signal':signal}
     const radios = await Radio.findByIdAndUpdate(fid, {$set: payload})
 }
 
@@ -677,6 +687,61 @@ async function play(){
     exec('mpc play')
 }
 
+// async function interrupt2(fileName, time){
+//     const now = Date.now()
+//     const day = new Date(time)
+//     const waitTime = day - now
+//     let fileLength
+//     let number
+//     let percent
+//     let stoppedFile
+//     console.log(waitTime)
+//     setTimeout(async function() {
+//         let status = await getOutputFromCommandLine('mpc status')
+//         console.log(status+555)
+//         stoppedFile = status.split('\n')[0]
+//         number = status.split('\n')[1].split('#')[1].split('/')[0]
+//         percent = status.split('\n')[1].split('(')[1].split(')')[0]
+//         fileLength = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 -250
+//         console.log(number)
+//         console.log(percent)
+//         console.log(fileLength)
+//         exec('mpc clear')
+//         await new Promise((resolve, reject) => exec(`mpc add "${fileName}"`, (error, stdout, stderror) => {
+//             if (error) {
+//                 return reject(error)
+//             }
+//             return resolve()
+//             }
+//         ))
+//         volume = await getVolume(fileName)
+//         exec(`mpc volume ${volume}`)
+//     }, waitTime)
+//     setTimeout(async function(){
+//         exec(`mpc play`)
+//     },waitTime+1000)
+//     setTimeout(async function() {
+//         exec('mpc clear')
+//         for(let i =0; i<playlist.length ;i++){
+//             if(playlist[i].length>0){
+//                 await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
+//                     if (error) {
+//                         return reject(error)
+//                         }
+//                     return resolve()
+//                 }
+//                 ))
+//             }
+//         }
+//         volume = 0
+//         exec('mpc volume 0')
+//         exec(`mpc play ${number}`)
+//         exec(`mpc seek ${percent}`)
+//         exec(`mpc volume ${await getVolume(stoppedFile)}`)
+//     },fileLength+waitTime+1000)
+    
+// }
+
 async function interrupt(fileName){
     let status = await getOutputFromCommandLine('mpc status')
     let stoppedFile = status.split('\n')[0]
@@ -714,7 +779,7 @@ async function interrupt(fileName){
         exec('mpc volume 0')
         exec(`mpc play ${number}`)
         exec(`mpc seek ${percent}`)
-        //exec(`mpc volume ${await getVolume(stoppedFile)}`)
+        exec(`mpc volume ${await getVolume(stoppedFile)}`)
     },fileLength)
 }
 
@@ -809,11 +874,10 @@ client.on('message', async (topic, message) => {
         const fileName = x.slice(10).split('/')[1]
         console.log(time)
         console.log(fileName)
-        interruptAtSpecificTime(time, fileName)
+        //interruptAtSpecificTime(time, fileName)
+        interrupt2(fileName, time)
     }
     else if(x === 'showlog'){
-        const t = await Files.find({})
-        console.log(t.length)
         //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
         //const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
         //console.log(log)

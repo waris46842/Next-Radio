@@ -3,7 +3,6 @@ const Schema = mongoose.Schema
 
 const radioSchema = new Schema({
     _id: Number,
-    group: String,
     status: String,
     MonOpenTime: String,
     MonCloseTime: String,
@@ -43,6 +42,7 @@ const radioSchema = new Schema({
     heartbeatTime: Number,
     freeSpace: String,
     timeForLog: Array,
+    signal: String,
     timeAutoSync: Number,
     dateAutoSync: Number,
     activeLastTime: Number
