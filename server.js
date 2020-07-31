@@ -648,8 +648,6 @@ async function setSpeechAfterClose(time) {
     console.log(`Change timeSpeechAfterClose to ${speechTimeHour}:${speechTimeMinute}:${speechTimeSecond}`)
 }
 
-
-
 async function getVolume(fileName) {
     const radios = await Radio.findById(fid)
     const fileType = fileName.split('-')[0]
@@ -757,7 +755,6 @@ async function getOutputFromCommandLine(cmd) {
     }
 };
 
-//var mongo_uri = 'mongodb+srv://waris46842:4684246842@next-radio.scrbg.mongodb.net/radio?retryWrites=true&w=majority';
 var mongo_uri = 'mongodb://waris46842:46842@192.168.1.194:27017/Next-Radio?authSource=admin';
 mongoose.Promise = global.Promise;
 mongoose.connect(mongo_uri, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false}).then(
@@ -823,12 +820,10 @@ client.on('message', async (topic, message) => {
         console.log(time)
         console.log(fileName)
         interruptAtSpecificTime(time, fileName)
-        //interrupt2(fileName, time)
     }
     else if(x === 'showlog'){
         //getFileFromS3AndAddToMPC('SONG-08-เหมือนจะดี-มารีน่า.mp3')
         //const log = await getOutputFromCommandLine(`grep -E 'played' /var/log/mpd/mpd.log | grep -E 'Jul 17'`)
-        //console.log(log)
     }
 
 });
