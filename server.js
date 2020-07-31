@@ -691,7 +691,7 @@ async function play(){
 async function interrupt(fileName){
     let status = await getOutputFromCommandLine('mpc status')
     let stoppedFile = status.split('\n')[0]
-    let number = status.split('\n')[1].split('#')[1].split('/')[0]
+    let number = parseInt(status.split('\n')[1].split('#')[1].split('/')[0])
     let percent = status.split('\n')[1].split('(')[1].split(')')[0]
     let fileLength = parseFloat(await getOutputFromCommandLine(`ffprobe -i /var/lib/mpd/music/"${fileName}" -show_entries format=duration -v quiet -of csv="p=0"`)) * 1000 -250
     console.log(number)
@@ -710,7 +710,20 @@ async function interrupt(fileName){
     exec('mpc play')
     setTimeout(async function() {
         exec('mpc clear')
-        for(let i =0; i<playlist.length ;i++){
+        await new Promise((resolve, reject) => exec(`mpc add "${stoppedFile}"`, (error, stdout, stderror) => {
+            if (error) {
+                return reject(error)
+            }
+            return resolve()
+            }
+        ))
+        volume = 0
+        exec('mpc volume 0')
+        exec(`mpc play`)
+        exec(`mpc seek ${percent}`)
+        exec(`mpc volume ${await getVolume(stoppedFile)}`)
+        exec('mpc play')
+        for(let i =number; i<playlist.length ;i++){
             if(playlist[i].length>0){
                 await new Promise((resolve, reject) => exec(`mpc add "${playlist[i]}"`, (error, stdout, stderror) => {
                     if (error) {
@@ -721,11 +734,12 @@ async function interrupt(fileName){
                 ))
             }
         }
-        volume = 0
-        exec('mpc volume 0')
-        exec(`mpc play ${number}`)
-        exec(`mpc seek ${percent}`)
-        exec(`mpc volume ${await getVolume(stoppedFile)}`)
+        //volume = 0
+        //exec('mpc volume 0')
+        //exec(`mpc play ${number}`)
+        //exec(`mpc seek ${percent}`)
+        //exec(`mpc volume ${await getVolume(stoppedFile)}`)
+        console.log(playlist)
     },fileLength)
 }
 
